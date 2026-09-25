@@ -168,7 +168,24 @@ public final class SwitchExprLowerer {
                 for (AstNode d : driver.currentUnit.declarations()) {
                     if (d instanceof RecordDeclarationNode rec && rec.name().equals(simple)) {
                         if (fi < rec.components().size()) {
-                            fieldType = CompilerTypes.toType(rec.components().get(fi).type(), driver.currentUnit);
+                            // #626: o record pode ser genérico por conta própria
+                            // (`Circle<T>(T tag, ...) implements Shape<T>`) — o
+                            // componente destructurado pelo pattern então é
+                            // literalmente o NOME do type-param ("T"), e
+                            // CompilerTypes.toType (sem contexto de type-params)
+                            // resolvia isso como um ClassType("","T") fantasma —
+                            // mesma família §355: getfield/invokevirtual saía com
+                            // descritor `LT;` literal (NoSuchMethodError, o
+                            // accessor real do record é `()Ljava/lang/Object;`
+                            // erasure). resolveWithTypeParams é o ponto único já
+                            // usado por CompilerIfaceRecordLowering.lowerRecord
+                            // pra gerar ESSE MESMO accessor — mesma fonte, mesma
+                            // erasure central (JvmTypeMapper.toDescriptor).
+                            List<String> recTypeParams = rec.typeParameters() == null
+                                    ? List.of() : rec.typeParameters();
+                            fieldType = CompilerTypes.resolveWithTypeParams(
+                                    rec.components().get(fi).type(), recTypeParams,
+                                    driver.currentUnit, driver.semanticAnalyzer);
                             fieldName = rec.components().get(fi).name();
                         }
                         break;

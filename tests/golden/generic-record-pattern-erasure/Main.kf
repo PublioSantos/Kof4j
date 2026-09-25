@@ -1,0 +1,27 @@
+sealed interface Shape<out T>
+record Circle<T>(T tag, Int r) implements Shape<T>
+record Square<T>(T tag, Int s) implements Shape<T>
+
+String describeExpr(Shape<String> sh) {
+    return switch (sh) {
+        case Circle(var tag, var r) -> tag + ":circle:" + r
+        case Square(var tag, var s) -> tag + ":square:" + s
+    }
+}
+
+String describeStmt(Shape<String> sh) {
+    switch (sh) {
+        case Circle(var tag, var r):
+            return tag + ":circle:" + r
+        case Square(var tag, var s):
+            return tag + ":square:" + s
+    }
+    return "?"
+}
+
+main() {
+    println(describeExpr(Circle("a", 5)))
+    println(describeExpr(Square("b", 3)))
+    println(describeStmt(Circle("c", 7)))
+    println(describeStmt(Square("d", 9)))
+}

@@ -182,7 +182,15 @@ if (hasPattern) {
                     for (AstNode d : driver.currentUnit.declarations()) {
                         if (d instanceof RecordDeclarationNode rec && rec.name().equals(pe.typeName())) {
                             if (fi < rec.components().size()) {
-                                fieldType = CompilerTypes.toType(rec.components().get(fi).type(), driver.currentUnit);
+                                // #626 (mesmo fix do SwitchExprLowerer): record
+                                // genérico por conta própria — resolveWithTypeParams
+                                // é o ponto único que CompilerIfaceRecordLowering.
+                                // lowerRecord já usa pra gerar o accessor real.
+                                List<String> recTypeParams = rec.typeParameters() == null
+                                        ? List.of() : rec.typeParameters();
+                                fieldType = CompilerTypes.resolveWithTypeParams(
+                                        rec.components().get(fi).type(), recTypeParams,
+                                        driver.currentUnit, driver.semanticAnalyzer);
                             }
                             break;
                         }
